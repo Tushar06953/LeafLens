@@ -13,13 +13,11 @@ Built with Flutter (mobile) and FastAPI (backend).
 - **Detailed botanical profiles** — Overview, Care, Uses, and Facts tabs per plant
 - **Care guide** — soil type, sunlight, watering, pH range, and temperature requirements
 - **Uses** — medicinal, culinary, cosmetic, and industrial applications; toxicity warning badge
-- **Conservation** — IUCN status, distribution countries, cultural significance
 - **Plant of the Day** — daily featured plant on Home and Encyclopedia screens
 - **Scan history** — full timeline with date grouping, search, and category filters
 - **Encyclopedia** — community-wide plant database that grows with every scan
 - **Favorites** — save plants and manage your collection from the Profile screen
-- **CSV export** — download your full scan history from the Profile screen
-- **Google Sign-In** — one-tap auth via Supabase OAuth
+
 
 ---
 
