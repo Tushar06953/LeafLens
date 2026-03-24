@@ -125,9 +125,9 @@ class _FilledHomeBody extends ConsumerWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.camera_alt_rounded, size: 20, color: AppColors.g1),
+                  const Icon(Icons.camera_alt_rounded, size: 20, color: Colors.white),
                   const SizedBox(width: 8),
-                  Text('Scan Now', style: AppTextStyles.button.copyWith(color: AppColors.g1)),
+                  Text('Scan Now', style: AppTextStyles.button.copyWith(color: Colors.white)),
                 ],
               ),
             ),
@@ -137,7 +137,7 @@ class _FilledHomeBody extends ConsumerWidget {
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 28, 20, 8),
-            child: Text('Recent Scans', style: AppTextStyles.heading1.copyWith(fontSize: 20, color: AppColors.cream)),
+            child: Text('Recent Scans', style: AppTextStyles.heading1.copyWith(fontSize: 20)),
           ),
         ),
         recentAsync.when(
@@ -181,7 +181,7 @@ class _Header extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Hello 🌿', style: AppTextStyles.heading1.copyWith(fontSize: 24, color: AppColors.cream)),
+            Text('Hello 🌿', style: AppTextStyles.heading1.copyWith(fontSize: 24)),
             Text('What plant is that?', style: AppTextStyles.bodySmall),
           ],
         ),
@@ -329,9 +329,9 @@ class _OrbitIllustrationState extends State<_OrbitIllustration>
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.camera_alt_rounded, size: 18, color: AppColors.g1),
+              const Icon(Icons.camera_alt_rounded, size: 18, color: Colors.white),
               const SizedBox(width: 8),
-              Text('Scan a Plant', style: AppTextStyles.button.copyWith(color: AppColors.g1)),
+              Text('Scan a Plant', style: AppTextStyles.button.copyWith(color: Colors.white)),
             ],
           ),
         ),

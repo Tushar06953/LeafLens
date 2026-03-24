@@ -58,7 +58,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           gradient: RadialGradient(
             center: Alignment.center,
             radius: 1.2,
-            colors: [AppColors.g2, AppColors.g1],
+            colors: [AppColors.dark2, AppColors.dark1],
           ),
         ),
         child: SafeArea(
@@ -129,12 +129,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                 // App name
                 Text(
                   'LeafLens',
-                  style: AppTextStyles.display,
+                  style: AppTextStyles.display.copyWith(color: AppColors.cream),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Identify · Learn · Save',
-                  style: AppTextStyles.tagline,
+                  style: AppTextStyles.tagline.copyWith(color: AppColors.gc),
                 ),
                 const Spacer(flex: 3),
                 // Get Started button

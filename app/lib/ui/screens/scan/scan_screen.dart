@@ -255,7 +255,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
-                children: ['leaf', 'flower', 'bark', 'full'].map((m) {
+                children: ['leaf', 'flower', 'full'].map((m) {
                   final active = mode == m;
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),

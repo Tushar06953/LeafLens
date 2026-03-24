@@ -7,14 +7,14 @@ class AppTextStyles {
   static TextStyle get display => GoogleFonts.cormorantGaramond(
         fontSize: 36,
         fontWeight: FontWeight.w700,
-        color: AppColors.cream,
+        color: AppColors.darkText,
         letterSpacing: 0.5,
       );
 
   static TextStyle get heading1 => GoogleFonts.cormorantGaramond(
         fontSize: 28,
         fontWeight: FontWeight.w700,
-        color: AppColors.cream,
+        color: AppColors.darkText,
       );
 
   static TextStyle get heading2 => GoogleFonts.cormorantGaramond(
@@ -33,13 +33,13 @@ class AppTextStyles {
   static TextStyle get body => GoogleFonts.outfit(
         fontSize: 14,
         fontWeight: FontWeight.w400,
-        color: AppColors.text1,
+        color: AppColors.darkText,
       );
 
   static TextStyle get bodySmall => GoogleFonts.outfit(
         fontSize: 12,
         fontWeight: FontWeight.w400,
-        color: AppColors.text2,
+        color: AppColors.mutedText,
       );
 
   static TextStyle get caption => GoogleFonts.outfit(
@@ -51,13 +51,13 @@ class AppTextStyles {
   static TextStyle get label => GoogleFonts.outfit(
         fontSize: 13,
         fontWeight: FontWeight.w500,
-        color: AppColors.text1,
+        color: AppColors.darkText,
       );
 
   static TextStyle get tagline => GoogleFonts.outfit(
         fontSize: 12,
         fontWeight: FontWeight.w400,
-        color: AppColors.text2,
+        color: AppColors.mutedText,
         letterSpacing: 1.5,
       );
 

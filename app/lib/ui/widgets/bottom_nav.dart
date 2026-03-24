@@ -51,12 +51,12 @@ class _NavItem extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: isActive ? AppColors.gc : AppColors.text3, size: 24),
+            Icon(icon, color: isActive ? AppColors.ga : AppColors.mutedText, size: 24),
             const SizedBox(height: 4),
             Text(
               label,
               style: AppTextStyles.caption.copyWith(
-                color: isActive ? AppColors.gc : AppColors.text3,
+                color: isActive ? AppColors.ga : AppColors.mutedText,
                 fontSize: 10,
               ),
             ),

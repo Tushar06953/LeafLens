@@ -6,6 +6,7 @@ import '../../../core/theme/colors.dart';
 import '../../../core/theme/text_styles.dart';
 import '../../../core/router/app_router.dart';
 import '../../../data/services/identify_service.dart';
+import '../../../providers/plant_of_day_provider.dart';
 
 // Step status
 enum _StepStatus { waiting, inProgress, done }
@@ -86,6 +87,7 @@ class _AnalyzingScreenState extends ConsumerState<AnalyzingScreen>
       await Future.delayed(const Duration(milliseconds: 300));
 
       if (mounted) {
+        ref.invalidate(allPlantsProvider);
         context.go(AppRoutes.result, extra: plant);
       }
     } catch (e) {
@@ -114,13 +116,13 @@ class _AnalyzingScreenState extends ConsumerState<AnalyzingScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.g1,
+      backgroundColor: AppColors.dark1,
       body: Container(
         decoration: const BoxDecoration(
           gradient: RadialGradient(
             center: Alignment.center,
             radius: 1.2,
-            colors: [AppColors.g2, AppColors.g1],
+            colors: [AppColors.dark2, AppColors.dark1],
           ),
         ),
         child: SafeArea(
@@ -140,12 +142,12 @@ class _AnalyzingScreenState extends ConsumerState<AnalyzingScreen>
                           controller: _pulseCtrl,
                         ),
                         const SizedBox(height: 40),
-                        Text('Analysing...', style: AppTextStyles.heading1),
+                        Text('Analysing...', style: AppTextStyles.heading1.copyWith(color: AppColors.cream)),
                         const SizedBox(height: 8),
                         Text(
                           'Please wait while we identify your plant',
                           style: AppTextStyles.body
-                              .copyWith(color: AppColors.text2),
+                              .copyWith(color: AppColors.gc),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 40),
@@ -267,7 +269,7 @@ class _StepCard extends StatelessWidget {
             ? AppColors.ga.withOpacity(0.2)
             : isActive
                 ? AppColors.gold.withOpacity(0.15)
-                : AppColors.g2.withOpacity(0.5),
+                : AppColors.dark3.withOpacity(0.6),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDone
@@ -347,13 +349,13 @@ class _ErrorView extends StatelessWidget {
         const SizedBox(height: 20),
         Text(
           isLowConfidence ? 'Plant Not Recognised' : 'Identification Failed',
-          style: AppTextStyles.heading2,
+          style: AppTextStyles.heading2.copyWith(color: AppColors.cream),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 12),
         Text(
           displayMessage,
-          style: AppTextStyles.body.copyWith(color: AppColors.text2),
+          style: AppTextStyles.body.copyWith(color: AppColors.gc),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 32),
