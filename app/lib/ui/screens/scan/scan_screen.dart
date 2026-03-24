@@ -165,7 +165,12 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
 
     final size = MediaQuery.of(context).size;
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (!didPop) context.go(AppRoutes.home);
+      },
+      child: Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         fit: StackFit.expand,
@@ -242,56 +247,6 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
                     ),
                   ],
                 ),
-              ),
-            ),
-          ),
-
-          // Mode chips
-          Positioned(
-            bottom: 148,
-            left: 0,
-            right: 0,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: ['leaf', 'flower', 'full'].map((m) {
-                  final active = mode == m;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: GestureDetector(
-                      onTap: () =>
-                          ref.read(_scanModeProvider.notifier).state = m,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 180),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: active
-                              ? AppColors.gb
-                              : Colors.black.withOpacity(0.5),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: active ? AppColors.gc : Colors.white30,
-                          ),
-                        ),
-                        child: Text(
-                          m == 'full'
-                              ? 'Full Plant'
-                              : m[0].toUpperCase() + m.substring(1),
-                          style: TextStyle(
-                            color:
-                                active ? Colors.white : Colors.white70,
-                            fontSize: 13,
-                            fontWeight: active
-                                ? FontWeight.w600
-                                : FontWeight.normal,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
               ),
             ),
           ),
@@ -400,6 +355,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
             ),
           ),
         ],
+      ),
       ),
     );
   }

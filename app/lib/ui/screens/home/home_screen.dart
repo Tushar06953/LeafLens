@@ -185,15 +185,6 @@ class _Header extends StatelessWidget {
             Text('What plant is that?', style: AppTextStyles.bodySmall),
           ],
         ),
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: AppColors.g3,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Icon(Icons.notifications_none_rounded, color: AppColors.gc, size: 22),
-        ),
       ],
     );
   }

@@ -118,7 +118,12 @@ class _AnalyzingScreenState extends ConsumerState<AnalyzingScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (!didPop && _error != null) context.go(AppRoutes.scan);
+      },
+      child: Scaffold(
       backgroundColor: AppColors.dark1,
       body: Container(
         decoration: const BoxDecoration(
@@ -163,6 +168,7 @@ class _AnalyzingScreenState extends ConsumerState<AnalyzingScreen>
             ),
           ),
         ),
+      ),
       ),
     );
   }
