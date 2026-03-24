@@ -1,0 +1,87 @@
+# =======================
+# Flutter / Dart
+# =======================
+app/.dart_tool/
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+app/.packages
+app/build/
+app/.pub-cache/
+app/.pub/
+app/pubspec.lock
+
+# Generated files
+app/**/*.g.dart
+app/**/*.freezed.dart
+
+# =======================
+# Android
+# =======================
+app/android/.gradle/
+app/android/captures/
+app/android/gradlew
+app/android/gradlew.bat
+app/android/local.properties
+app/android/GeneratedPluginRegistrant.java
+app/android/app/debug/
+app/android/app/release/
+app/android/app/profile/
+app/android/key.properties
+*.jks
+*.keystore
+
+# =======================
+# iOS
+# =======================
+app/ios/.symlinks/
+app/ios/Flutter/App.framework
+app/ios/Flutter/Flutter.framework
+app/ios/Flutter/Flutter.podspec
+app/ios/Flutter/Generated.xcconfig
+app/ios/Flutter/ephemeral/
+app/ios/Flutter/app.flx
+app/ios/Flutter/app.zip
+app/ios/Flutter/flutter_assets/
+app/ios/Flutter/flutter_export_environment.sh
+app/ios/ServiceDefinitions.json
+app/ios/Runner/GeneratedPluginRegistrant.*
+app/ios/Pods/
+app/ios/*.xcworkspace
+
+# =======================
+# Python / FastAPI backend
+# =======================
+backend/__pycache__/
+backend/**/__pycache__/
+backend/*.pyc
+backend/**/*.pyc
+backend/*.pyo
+backend/.venv/
+backend/venv/
+backend/.env
+backend/uploads/
+backend/*.db
+backend/*.sqlite
+
+# =======================
+# Environment & secrets
+# =======================
+.env
+.env.*
+*.env
+!.env.example
+
+# =======================
+# IDEs & editors
+# =======================
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# =======================
+# macOS
+# =======================
+.DS_Store
+**/.DS_Store
