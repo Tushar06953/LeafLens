@@ -10,6 +10,7 @@ import '../../../core/constants/storage_keys.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/scan_stats_provider.dart';
 import '../../../providers/plant_of_day_provider.dart';
+import '../../widgets/bottom_nav.dart';
 
 // ─── Region provider ──────────────────────────────────────────────────────────
 
@@ -291,7 +292,7 @@ class ProfileScreen extends ConsumerWidget {
           ),
         ],
       ),
-      bottomNavigationBar: _BottomNav(currentIndex: 3),
+      bottomNavigationBar: const BottomNav(currentIndex: 3),
     );
   }
 
@@ -1195,61 +1196,3 @@ class _StatsShimmer extends StatelessWidget {
   }
 }
 
-// ─── Bottom nav ───────────────────────────────────────────────────────────────
-
-class _BottomNav extends StatelessWidget {
-  final int currentIndex;
-  const _BottomNav({required this.currentIndex});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.g2,
-        border: Border(top: BorderSide(color: AppColors.g3)),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _NI(icon: Icons.home_rounded, label: 'Home', active: currentIndex == 0, onTap: () => context.go(AppRoutes.home)),
-              _NI(icon: Icons.camera_alt_rounded, label: 'Scan', active: currentIndex == 1, onTap: () => context.go(AppRoutes.scan)),
-              _NI(icon: Icons.menu_book_rounded, label: 'Encyclopedia', active: currentIndex == 2, onTap: () => context.go(AppRoutes.encyclopedia)),
-              _NI(icon: Icons.person_rounded, label: 'Profile', active: currentIndex == 3, onTap: () => context.go(AppRoutes.profile)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _NI extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool active;
-  final VoidCallback onTap;
-  const _NI({required this.icon, required this.label, required this.active, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon,
-              color: active ? AppColors.gc : AppColors.text3, size: 24),
-          const SizedBox(height: 4),
-          Text(label,
-              style: AppTextStyles.caption.copyWith(
-                  color: active ? AppColors.gc : AppColors.text3,
-                  fontSize: 10)),
-        ]),
-      ),
-    );
-  }
-}

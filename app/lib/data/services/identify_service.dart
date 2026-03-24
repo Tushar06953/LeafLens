@@ -8,8 +8,8 @@ import '../models/plant.dart';
 class IdentifyService {
   static final _dio = Dio(
     BaseOptions(
-      connectTimeout: const Duration(seconds: 15),
-      receiveTimeout: const Duration(seconds: 60),
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 120),
     ),
   );
 

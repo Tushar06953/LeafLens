@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/text_styles.dart';
 import '../../../core/router/app_router.dart';
-import '../../../data/models/plant.dart';
 import '../../../data/services/identify_service.dart';
 
 // Step status
@@ -45,7 +44,7 @@ class _AnalyzingScreenState extends ConsumerState<AnalyzingScreen>
     const _Step('Building plant profile', _StepStatus.waiting),
   ];
 
-  String? _errorMsg;
+  IdentifyException? _error;
 
   @override
   void initState() {
@@ -90,7 +89,11 @@ class _AnalyzingScreenState extends ConsumerState<AnalyzingScreen>
         context.go(AppRoutes.result, extra: plant);
       }
     } catch (e) {
-      setState(() => _errorMsg = e.toString());
+      setState(() {
+        _error = e is IdentifyException
+            ? e
+            : IdentifyException(code: 'connection_error', message: e.toString());
+      });
     }
   }
 
@@ -124,9 +127,9 @@ class _AnalyzingScreenState extends ConsumerState<AnalyzingScreen>
           child: Center(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: _errorMsg != null
+              child: _error != null
                   ? _ErrorView(
-                      message: _errorMsg!,
+                      error: _error!,
                       onRetry: () => context.go(AppRoutes.scan),
                     )
                   : Column(
@@ -324,25 +327,32 @@ class _StepCard extends StatelessWidget {
 // ─── Error view ────────────────────────────────────────────────────────────────
 
 class _ErrorView extends StatelessWidget {
-  final String message;
+  final IdentifyException error;
   final VoidCallback onRetry;
 
-  const _ErrorView({required this.message, required this.onRetry});
+  const _ErrorView({required this.error, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
+    final isLowConfidence = error.code == 'low_confidence';
+    final displayMessage = isLowConfidence
+        ? 'Could not identify — try multi-angle for better results.'
+        : error.message;
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text('😔', style: TextStyle(fontSize: 64)),
+        Text(isLowConfidence ? '🔍' : '😔',
+            style: const TextStyle(fontSize: 64)),
         const SizedBox(height: 20),
-        Text('Identification Failed',
-            style: AppTextStyles.heading2, textAlign: TextAlign.center),
+        Text(
+          isLowConfidence ? 'Plant Not Recognised' : 'Identification Failed',
+          style: AppTextStyles.heading2,
+          textAlign: TextAlign.center,
+        ),
         const SizedBox(height: 12),
         Text(
-          message.contains('low_confidence')
-              ? 'Could not identify — try multi-angle for better results.'
-              : 'Something went wrong. Please try again.',
+          displayMessage,
           style: AppTextStyles.body.copyWith(color: AppColors.text2),
           textAlign: TextAlign.center,
         ),

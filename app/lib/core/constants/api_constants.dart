@@ -3,6 +3,6 @@ class ApiConstants {
   static const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: '');
   static const backendBaseUrl = String.fromEnvironment(
     'BACKEND_URL',
-    defaultValue: 'https://leaflens-api.onrender.com',
+    defaultValue: 'https://leaflens-api-947k.onrender.com',
   );
 }

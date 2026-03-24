@@ -1,9 +1,12 @@
 import os
 import uuid
+import logging
 import httpx
 from fastapi import APIRouter, File, Form, UploadFile, HTTPException, Header
 from typing import List, Optional
 from supabase import create_client, Client
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/identify", tags=["identify"])
 
@@ -47,7 +50,7 @@ async def identify_plant(
             content = await f.read()
             image_bytes_list.append((f.filename or "image.jpg", content, f.content_type or "image/jpeg"))
 
-        async with httpx.AsyncClient(timeout=30) as client:
+        async with httpx.AsyncClient(timeout=60) as client:
             pn_files = [
                 ("images", (name, data, ctype))
                 for name, data, ctype in image_bytes_list
@@ -186,4 +189,5 @@ async def identify_plant(
     except HTTPException:
         raise
     except Exception as e:
+        logger.exception("identify_plant failed")
         return {"error": "identify_failed", "detail": str(e)}
