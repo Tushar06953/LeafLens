@@ -54,17 +54,14 @@ def identify_plant(
             content = f.file.read()
             file_contents.append((f.filename or "image.jpg", content, f.content_type or "image/jpeg"))
 
-        multipart_data = []
-        for fc in file_contents:
-            multipart_data.append(("images", fc))
-        for _ in file_contents:
-            multipart_data.append(("organs", plantnet_organ))
+        pn_files = [("images", fc) for fc in file_contents]
 
         with httpx.Client(timeout=60) as client:
             pn_resp = client.post(
                 plantnet_url,
                 params={"api-key": PLANTNET_API_KEY, "lang": "en"},
-                files=multipart_data,
+                files=pn_files,
+                data={"organs": plantnet_organ},
             )
 
         if pn_resp.status_code != 200:
