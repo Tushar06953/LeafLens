@@ -85,3 +85,4 @@ backend/*.sqlite
 # =======================
 .DS_Store
 **/.DS_Store
+.dart_tool/
