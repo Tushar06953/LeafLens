@@ -2,7 +2,7 @@
 
 **AI-powered plant identification app** — point your camera at any plant to get an instant botanical profile with care guides, medicinal uses, conservation status, and more.
 
-Built with Flutter (mobile) and FastAPI (backend), running at $0/month on free-tier infrastructure.
+Built with Flutter (mobile) and FastAPI (backend).
 
 ---
 
