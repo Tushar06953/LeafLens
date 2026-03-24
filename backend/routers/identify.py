@@ -19,7 +19,10 @@ ORGAN_MAP = {
     "flower": "flower",
     "bark": "bark",
     "full": "auto",
+    "full plant": "auto",
 }
+
+VALID_PLANTNET_ORGANS = {"leaf", "flower", "bark", "auto"}
 
 CARE_DEFAULTS = {
     "soil": "Well-draining loamy soil",
@@ -42,7 +45,8 @@ def identify_plant(
 ):
     try:
         # ── 1. Call Pl@ntNet ──────────────────────────────────────────────────
-        plantnet_organ = ORGAN_MAP.get(organ, "auto")
+        mapped = ORGAN_MAP.get(organ.lower().strip(), organ.lower().strip())
+        plantnet_organ = mapped if mapped in VALID_PLANTNET_ORGANS else "auto"
         plantnet_url = "https://my-api.plantnet.org/v2/identify/all"
 
         file_contents = []
