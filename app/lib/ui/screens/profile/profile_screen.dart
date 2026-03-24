@@ -107,7 +107,7 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authProvider);
-    final statsAsync = ref.watch(scanStatsProvider);
+    final stats = ref.watch(scanStatsProvider);
     final selectedRegion = ref.watch(selectedRegionProvider);
 
     final user = auth.user;
@@ -143,11 +143,7 @@ class ProfileScreen extends ConsumerWidget {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
-              child: statsAsync.when(
-                loading: () => const _StatsShimmer(),
-                error: (_, __) => const SizedBox.shrink(),
-                data: (stats) => _StatsRow(stats: stats),
-              ),
+              child: _StatsRow(stats: stats),
             ),
           ),
 

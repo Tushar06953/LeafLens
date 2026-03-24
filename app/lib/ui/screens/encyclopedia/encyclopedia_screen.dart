@@ -28,10 +28,10 @@ class EncyclopediaScreen extends ConsumerWidget {
     final potdAsync = ref.watch(plantOfDayProvider);
     final savedPlants = ref.watch(localSavedPlantsProvider);
 
-    return PopScope(
-      canPop: false,
-      onPopInvoked: (didPop) {
-        if (!didPop) context.go(AppRoutes.home);
+    return BackButtonListener(
+      onBackButtonPressed: () async {
+        context.go(AppRoutes.home);
+        return true;
       },
       child: Scaffold(
         backgroundColor: AppColors.warm,
@@ -330,7 +330,7 @@ class _FeaturedCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => context.go(AppRoutes.plantDetail, extra: plant),
+      onTap: () => context.push(AppRoutes.plantDetail, extra: plant),
       child: Container(
         height: 160,
         padding: const EdgeInsets.all(20),
@@ -438,7 +438,7 @@ class _PlantCard extends StatelessWidget {
     final bg = _bgColors[index % _bgColors.length];
 
     return GestureDetector(
-      onTap: () => context.go(AppRoutes.plantDetail, extra: plant),
+      onTap: () => context.push(AppRoutes.plantDetail, extra: plant),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(

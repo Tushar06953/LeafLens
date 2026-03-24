@@ -30,11 +30,20 @@ final allPlantsProvider = FutureProvider<List<PlantModel>>((ref) async {
 });
 
 // ─── Recent scans ─────────────────────────────────────────────────────────────
-/// TODO: Replace with real Supabase StreamProvider:
-/// supabase.from('scans').stream(primaryKey: ['id']).eq('user_id', uid).order('scanned_at').limit(3)
-final recentScansProvider = FutureProvider<List<ScanModel>>((ref) async {
-  final repo = ref.read(scanRepoProvider);
-  return repo.getRecent(limit: 3);
+/// Reads from local history so the home screen updates immediately after each scan.
+final recentScansProvider = Provider<List<ScanModel>>((ref) {
+  final history = ref.watch(localHistoryProvider);
+  return history.take(3).map((e) => ScanModel(
+        id: e.plant.id,
+        userId: '',
+        plantId: e.plant.id,
+        confidence: e.plant.confidence,
+        scanMode: 'leaf',
+        scannedAt: e.scannedAt,
+        commonName: e.plant.commonName,
+        scientificName: e.plant.scientificName,
+        emoji: e.plant.emoji,
+      )).toList();
 });
 
 final allScansProvider = FutureProvider<List<ScanModel>>((ref) async {

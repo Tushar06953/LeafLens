@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/repositories/scan_repo.dart';
 import '../data/repositories/saved_plants_repo.dart';
+import 'local_history_provider.dart';
 
 class ScanStats {
   final int totalScans;
@@ -21,21 +22,14 @@ final scanRepoProvider = Provider<ScanRepository>((ref) => ScanRepository());
 final savedPlantsRepoProvider = Provider<SavedPlantsRepository>((ref) => SavedPlantsRepository());
 
 // ─── Stats provider ───────────────────────────────────────────────────────────
-/// TODO: When real Supabase is wired, switch this to a StreamProvider
-/// watching the scans table so stats update in real time.
-final scanStatsProvider = FutureProvider<ScanStats>((ref) async {
-  final scanRepo = ref.read(scanRepoProvider);
-  final savedRepo = ref.read(savedPlantsRepoProvider);
-
-  final results = await Future.wait([
-    scanRepo.getTotalScans(),
-    scanRepo.getUniqueSpeciesCount(),
-    savedRepo.getSavedCount(),
-  ]);
-
+/// Reads from local history so stats update immediately after each scan.
+final scanStatsProvider = Provider<ScanStats>((ref) {
+  final history = ref.watch(localHistoryProvider);
+  final saved = ref.watch(localSavedPlantsProvider);
+  final uniqueSpecies = history.map((e) => e.plant.id).toSet().length;
   return ScanStats(
-    totalScans: results[0],
-    uniqueSpecies: results[1],
-    saved: results[2],
+    totalScans: history.length,
+    uniqueSpecies: uniqueSpecies,
+    saved: saved.length,
   );
 });

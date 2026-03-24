@@ -17,17 +17,13 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final statsAsync = ref.watch(scanStatsProvider);
+    final stats = ref.watch(scanStatsProvider);
 
     return Scaffold(
       backgroundColor: AppColors.g1,
-      body: statsAsync.when(
-        loading: () => const _HomeShimmer(),
-        error: (e, _) => _ErrorState(onRetry: () => ref.invalidate(scanStatsProvider)),
-        data: (stats) => stats.totalScans == 0
-            ? const _EmptyHomeBody()
-            : const _FilledHomeBody(),
-      ),
+      body: stats.totalScans == 0
+          ? const _EmptyHomeBody()
+          : const _FilledHomeBody(),
       bottomNavigationBar: const BottomNav(currentIndex: 0),
     );
   }
@@ -86,8 +82,8 @@ class _FilledHomeBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final statsAsync = ref.watch(scanStatsProvider);
-    final recentAsync = ref.watch(recentScansProvider);
+    final stats = ref.watch(scanStatsProvider);
+    final recentScans = ref.watch(recentScansProvider);
     final potdAsync = ref.watch(plantOfDayProvider);
 
     return CustomScrollView(
@@ -104,11 +100,7 @@ class _FilledHomeBody extends ConsumerWidget {
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-            child: statsAsync.when(
-              loading: () => const _StatsShimmer(),
-              error: (e, st) => const SizedBox.shrink(),
-              data: (stats) => _StatsRow(stats: stats),
-            ),
+            child: _StatsRow(stats: stats),
           ),
         ),
         // Scan Now button
@@ -140,17 +132,13 @@ class _FilledHomeBody extends ConsumerWidget {
             child: Text('Recent Scans', style: AppTextStyles.heading1.copyWith(fontSize: 20)),
           ),
         ),
-        recentAsync.when(
-          loading: () => SliverToBoxAdapter(child: const _RecentShimmer()),
-          error: (e, st) => const SliverToBoxAdapter(child: SizedBox.shrink()),
-          data: (scans) => SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, i) => Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-                child: _HistoryItem(scan: scans[i]),
-              ),
-              childCount: scans.length,
+        SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, i) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+              child: _HistoryItem(scan: recentScans[i]),
             ),
+            childCount: recentScans.length,
           ),
         ),
         // Plant of Day
@@ -495,100 +483,6 @@ class _HistoryItem extends StatelessWidget {
 
 // ─── Shimmer / Loading / Error ────────────────────────────────────────────────
 
-class _HomeShimmer extends StatelessWidget {
-  const _HomeShimmer();
-
-  @override
-  Widget build(BuildContext context) {
-    return Shimmer.fromColors(
-      baseColor: AppColors.g2,
-      highlightColor: AppColors.g3,
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    _ShimmerBox(width: 120, height: 22),
-                    const SizedBox(height: 6),
-                    _ShimmerBox(width: 160, height: 14),
-                  ]),
-                  _ShimmerBox(width: 40, height: 40, radius: 12),
-                ],
-              ),
-              const SizedBox(height: 28),
-              // Stats
-              Row(children: [
-                Expanded(child: _ShimmerBox(height: 72)),
-                const SizedBox(width: 12),
-                Expanded(child: _ShimmerBox(height: 72)),
-                const SizedBox(width: 12),
-                Expanded(child: _ShimmerBox(height: 72)),
-              ]),
-              const SizedBox(height: 20),
-              _ShimmerBox(width: double.infinity, height: 52),
-              const SizedBox(height: 28),
-              _ShimmerBox(width: 120, height: 20),
-              const SizedBox(height: 12),
-              _ShimmerBox(width: double.infinity, height: 72),
-              const SizedBox(height: 8),
-              _ShimmerBox(width: double.infinity, height: 72),
-              const SizedBox(height: 8),
-              _ShimmerBox(width: double.infinity, height: 72),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _StatsShimmer extends StatelessWidget {
-  const _StatsShimmer();
-
-  @override
-  Widget build(BuildContext context) {
-    return Shimmer.fromColors(
-      baseColor: AppColors.g2,
-      highlightColor: AppColors.g3,
-      child: Row(children: [
-        Expanded(child: _ShimmerBox(height: 72)),
-        const SizedBox(width: 12),
-        Expanded(child: _ShimmerBox(height: 72)),
-        const SizedBox(width: 12),
-        Expanded(child: _ShimmerBox(height: 72)),
-      ]),
-    );
-  }
-}
-
-class _RecentShimmer extends StatelessWidget {
-  const _RecentShimmer();
-
-  @override
-  Widget build(BuildContext context) {
-    return Shimmer.fromColors(
-      baseColor: AppColors.g2,
-      highlightColor: AppColors.g3,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(children: [
-          _ShimmerBox(width: double.infinity, height: 72),
-          const SizedBox(height: 8),
-          _ShimmerBox(width: double.infinity, height: 72),
-          const SizedBox(height: 8),
-          _ShimmerBox(width: double.infinity, height: 72),
-        ]),
-      ),
-    );
-  }
-}
-
 class _PotdShimmer extends StatelessWidget {
   const _PotdShimmer();
 
@@ -617,26 +511,6 @@ class _ShimmerBox extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.g2,
         borderRadius: BorderRadius.circular(radius),
-      ),
-    );
-  }
-}
-
-class _ErrorState extends StatelessWidget {
-  final VoidCallback onRetry;
-  const _ErrorState({required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text('🌵', style: TextStyle(fontSize: 48)),
-          const SizedBox(height: 16),
-          Text('Something went wrong', style: AppTextStyles.label),
-          TextButton(onPressed: onRetry, child: Text('Retry', style: AppTextStyles.body.copyWith(color: AppColors.gc))),
-        ],
       ),
     );
   }

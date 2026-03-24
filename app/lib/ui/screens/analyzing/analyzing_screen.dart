@@ -121,10 +121,10 @@ class _AnalyzingScreenState extends ConsumerState<AnalyzingScreen>
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvoked: (didPop) {
-        if (!didPop && _error != null) context.go(AppRoutes.scan);
+    return BackButtonListener(
+      onBackButtonPressed: () async {
+        if (_error != null) context.go(AppRoutes.scan);
+        return true; // always consume — block back during analysis
       },
       child: Scaffold(
       backgroundColor: AppColors.dark1,

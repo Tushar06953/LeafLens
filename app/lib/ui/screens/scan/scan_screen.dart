@@ -165,10 +165,10 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
 
     final size = MediaQuery.of(context).size;
 
-    return PopScope(
-      canPop: false,
-      onPopInvoked: (didPop) {
-        if (!didPop) context.go(AppRoutes.home);
+    return BackButtonListener(
+      onBackButtonPressed: () async {
+        context.go(AppRoutes.home);
+        return true;
       },
       child: Scaffold(
       backgroundColor: Colors.black,
