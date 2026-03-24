@@ -23,7 +23,12 @@ class ResultScreen extends ConsumerWidget {
       );
     }
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (!didPop) context.go(AppRoutes.home);
+      },
+      child: Scaffold(
       backgroundColor: AppColors.g1,
       body: Stack(
         children: [
@@ -45,6 +50,7 @@ class ResultScreen extends ConsumerWidget {
             child: _SaveBar(plant: plant),
           ),
         ],
+      ),
       ),
     );
   }
