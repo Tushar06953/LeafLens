@@ -35,7 +35,7 @@ def get_supabase() -> Client:
 
 
 @router.post("")
-async def identify_plant(
+def identify_plant(
     files: List[UploadFile] = File(...),
     organ: str = Form("leaf"),
     authorization: Optional[str] = Header(None),
@@ -47,28 +47,28 @@ async def identify_plant(
 
         image_bytes_list = []
         for f in files:
-            content = await f.read()
+            content = f.file.read()
             image_bytes_list.append((f.filename or "image.jpg", content, f.content_type or "image/jpeg"))
 
-        async with httpx.AsyncClient(timeout=60) as client:
+        with httpx.Client(timeout=60) as client:
             pn_files = [
                 ("images", (name, data, ctype))
                 for name, data, ctype in image_bytes_list
             ]
-            pn_data = [("organs", plantnet_organ)] * len(files)
+            pn_form = [("organs", plantnet_organ)] * len(files)
 
-            pn_resp = await client.post(
+            pn_resp = client.post(
                 plantnet_url,
                 params={"api-key": PLANTNET_API_KEY, "lang": "en"},
                 files=pn_files,
-                data=pn_data,
+                data=pn_form,
             )
 
         if pn_resp.status_code != 200:
             raise HTTPException(status_code=502, detail=f"PlantNet error: {pn_resp.text}")
 
-        pn_data_json = pn_resp.json()
-        results = pn_data_json.get("results", [])
+        pn_json = pn_resp.json()
+        results = pn_json.get("results", [])
         if not results:
             return {"error": "low_confidence", "message": "Could not identify — try multi-angle"}
 
@@ -88,8 +88,8 @@ async def identify_plant(
         description = ""
         thumbnail_url = None
         wiki_slug = scientific_name.replace(" ", "_")
-        async with httpx.AsyncClient(timeout=10) as client:
-            wiki_resp = await client.get(
+        with httpx.Client(timeout=10) as client:
+            wiki_resp = client.get(
                 f"https://en.wikipedia.org/api/rest_v1/page/summary/{wiki_slug}"
             )
             if wiki_resp.status_code == 200:
@@ -104,8 +104,8 @@ async def identify_plant(
         iucn_status = None
 
         try:
-            async with httpx.AsyncClient(timeout=10) as client:
-                gbif_resp = await client.get(
+            with httpx.Client(timeout=10) as client:
+                gbif_resp = client.get(
                     "https://api.gbif.org/v1/species/match",
                     params={"name": scientific_name, "verbose": "false"},
                 )
@@ -125,7 +125,7 @@ async def identify_plant(
             img_name = f"{uuid.uuid4()}.jpg"
             first_img_bytes = image_bytes_list[0][1]
             try:
-                upload_resp = supabase.storage.from_("plant-images").upload(
+                supabase.storage.from_("plant-images").upload(
                     img_name, first_img_bytes, {"content-type": "image/jpeg"}
                 )
                 image_url = supabase.storage.from_("plant-images").get_public_url(img_name)
