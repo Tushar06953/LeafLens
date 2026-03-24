@@ -7,6 +7,8 @@ import '../../../core/theme/text_styles.dart';
 import '../../../core/router/app_router.dart';
 import '../../../data/models/plant.dart';
 import '../../../providers/saved_plants_provider.dart';
+import '../../../providers/local_history_provider.dart';
+import '../../../providers/plant_of_day_provider.dart';
 
 class ResultScreen extends ConsumerWidget {
   final PlantModel plant;
@@ -511,11 +513,54 @@ class _SaveBarState extends ConsumerState<_SaveBar>
   Future<void> _toggle(bool isSaved) async {
     await _scaleCtrl.forward();
     await _scaleCtrl.reverse();
-    final actions = ref.read(savedPlantsActionsProvider);
+
     if (isSaved) {
-      await actions.unsave(widget.plant.id);
+      // Unsave
+      ref.read(localSavedPlantsProvider.notifier).remove(widget.plant.id);
+      try {
+        await ref.read(savedPlantsActionsProvider).unsave(widget.plant.id);
+      } catch (_) {}
+      ref.invalidate(allPlantsProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Removed from collection'),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
     } else {
-      await actions.save(widget.plant.id);
+      // Save locally first (works without Supabase)
+      await ref
+          .read(localSavedPlantsProvider.notifier)
+          .add(widget.plant);
+      // Also try Supabase (silent failure if no auth)
+      try {
+        await ref.read(savedPlantsActionsProvider).save(widget.plant.id);
+      } catch (_) {}
+      ref.invalidate(allPlantsProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: const [
+                Icon(Icons.bookmark_rounded,
+                    color: Colors.white, size: 18),
+                SizedBox(width: 10),
+                Text('Plant saved to your collection!'),
+              ],
+            ),
+            backgroundColor: AppColors.ga,
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
     }
   }
 

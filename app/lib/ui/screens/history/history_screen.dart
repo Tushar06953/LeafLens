@@ -1,18 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shimmer/shimmer.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/text_styles.dart';
-import '../../../data/models/scan.dart';
-import '../../../providers/plant_of_day_provider.dart';
+import '../../../core/router/app_router.dart';
+import '../../../providers/local_history_provider.dart';
 import '../../widgets/bottom_nav.dart';
-
-// ─── Local state ──────────────────────────────────────────────────────────────
-
-final _searchQueryProvider = StateProvider<String>((ref) => '');
-final _activeCategoryProvider = StateProvider<String>((ref) => 'All');
-
-const _categories = ['All', 'Medicinal', 'Edible', 'Toxic', 'Saved'];
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
@@ -21,139 +14,93 @@ class HistoryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scansAsync = ref.watch(allScansProvider);
+    final history = ref.watch(localHistoryProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.warm,
-      body: scansAsync.when(
-        loading: () => const _HistoryShimmer(),
-        error: (e, _) => _ErrorState(
-            onRetry: () => ref.invalidate(allScansProvider)),
-        data: (scans) => _HistoryBody(scans: scans),
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (!didPop) context.go(AppRoutes.home);
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.g1,
+        body: SafeArea(
+          child: Column(
+            children: [
+              _Header(count: history.length),
+              Expanded(
+                child: history.isEmpty
+                    ? _EmptyState(onScan: () => context.go(AppRoutes.scan))
+                    : _HistoryList(history: history),
+              ),
+            ],
+          ),
+        ),
+        bottomNavigationBar: const BottomNav(currentIndex: 2),
       ),
-      bottomNavigationBar: const BottomNav(currentIndex: 0),
     );
   }
 }
 
-class _HistoryBody extends ConsumerWidget {
-  final List<ScanModel> scans;
-  const _HistoryBody({required this.scans});
+// ─── Header ───────────────────────────────────────────────────────────────────
+
+class _Header extends ConsumerWidget {
+  final int count;
+  const _Header({required this.count});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final query = ref.watch(_searchQueryProvider).toLowerCase();
-    final category = ref.watch(_activeCategoryProvider);
-
-    final filtered = scans.where((s) {
-      final matchQuery = query.isEmpty ||
-          (s.commonName?.toLowerCase().contains(query) ?? false) ||
-          (s.scientificName?.toLowerCase().contains(query) ?? false);
-      final matchCat = category == 'All' ||
-          (s.category?.toLowerCase() == category.toLowerCase());
-      return matchQuery && matchCat;
-    }).toList();
-
-    return SafeArea(
-      child: Column(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 16, 0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Header
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('History', style: AppTextStyles.heading1.copyWith(color: AppColors.darkText)),
-                Text(
-                  '${scans.length} scans',
-                  style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
-                ),
-              ],
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('History',
+                  style: AppTextStyles.heading1
+                      .copyWith(color: AppColors.darkText)),
+              Text(
+                '$count scan${count == 1 ? '' : 's'}',
+                style:
+                    AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+              ),
+            ],
+          ),
+          if (count > 0)
+            TextButton.icon(
+              onPressed: () => _confirmClear(context, ref),
+              icon: const Icon(Icons.delete_outline_rounded, size: 18),
+              label: const Text('Clear All'),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red.shade400,
+                textStyle:
+                    AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600),
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
 
-          // Search bar
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Consumer(builder: (ctx, ref, _) {
-              return TextField(
-                onChanged: (v) =>
-                    ref.read(_searchQueryProvider.notifier).state = v,
-                decoration: InputDecoration(
-                  hintText: 'Search plants...',
-                  hintStyle: AppTextStyles.body
-                      .copyWith(color: AppColors.mutedText),
-                  prefixIcon: const Icon(Icons.search_rounded,
-                      color: AppColors.mutedText),
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding:
-                      const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                style: AppTextStyles.body
-                    .copyWith(color: AppColors.darkText),
-              );
-            }),
-          ),
-          const SizedBox(height: 12),
-
-          // Filter chips
-          SizedBox(
-            height: 36,
-            child: Consumer(builder: (ctx, ref, _) {
-              final active = ref.watch(_activeCategoryProvider);
-              return ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                itemCount: _categories.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (_, i) {
-                  final cat = _categories[i];
-                  final isActive = cat == active;
-                  return GestureDetector(
-                    onTap: () => ref
-                        .read(_activeCategoryProvider.notifier)
-                        .state = cat,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: isActive ? AppColors.ga : Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: isActive
-                              ? AppColors.ga
-                              : const Color(0xFFE0E0E0),
-                        ),
-                      ),
-                      child: Text(
-                        cat,
-                        style: AppTextStyles.caption.copyWith(
-                          color: isActive ? Colors.white : AppColors.mutedText,
-                          fontWeight: isActive
-                              ? FontWeight.w600
-                              : FontWeight.normal,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              );
-            }),
-          ),
-          const SizedBox(height: 8),
-
-          // List
-          Expanded(
-            child: filtered.isEmpty
-                ? _EmptyState()
-                : _GroupedList(scans: filtered),
+  void _confirmClear(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Clear History?'),
+        content: const Text('All scan records will be deleted from this device.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel')),
+          TextButton(
+            onPressed: () {
+              ref.read(localHistoryProvider.notifier).clear();
+              Navigator.of(ctx).pop();
+            },
+            child: Text('Clear',
+                style: TextStyle(color: Colors.red.shade400)),
           ),
         ],
       ),
@@ -161,175 +108,162 @@ class _HistoryBody extends ConsumerWidget {
   }
 }
 
-class _GroupedList extends StatelessWidget {
-  final List<ScanModel> scans;
-  const _GroupedList({required this.scans});
+// ─── History list ─────────────────────────────────────────────────────────────
+
+class _HistoryList extends StatelessWidget {
+  final List<HistoryEntry> history;
+  const _HistoryList({required this.history});
 
   String _groupLabel(DateTime dt) {
     final now = DateTime.now();
-    final diff = now.difference(dt);
-    if (diff.inDays == 0) return 'Today';
-    if (diff.inDays == 1) return 'Yesterday';
-    if (diff.inDays < 7) return 'This Week';
+    final today = DateTime(now.year, now.month, now.day);
+    final entryDay = DateTime(dt.year, dt.month, dt.day);
+    final diff = today.difference(entryDay).inDays;
+    if (diff == 0) return 'Today';
+    if (diff == 1) return 'Yesterday';
+    if (diff < 7) return 'This Week';
     return 'Older';
   }
 
   @override
   Widget build(BuildContext context) {
-    final groups = <String, List<ScanModel>>{};
-    for (final s in scans) {
-      final label = _groupLabel(s.scannedAt);
-      groups.putIfAbsent(label, () => []).add(s);
+    final groups = <String, List<HistoryEntry>>{};
+    for (final e in history) {
+      final label = _groupLabel(e.scannedAt);
+      groups.putIfAbsent(label, () => []).add(e);
     }
-
     final order = ['Today', 'Yesterday', 'This Week', 'Older'];
-    final sortedKeys =
-        order.where((k) => groups.containsKey(k)).toList();
+    final sortedKeys = order.where((k) => groups.containsKey(k)).toList();
 
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      itemCount: sortedKeys.fold<int>(
-          0, (sum, k) => sum + 1 + groups[k]!.length),
-      itemBuilder: (ctx, index) {
-        int cursor = 0;
-        for (final key in sortedKeys) {
-          if (index == cursor) {
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(0, 12, 0, 6),
-              child: Text(
-                key,
-                style: AppTextStyles.label.copyWith(
-                    color: AppColors.mutedText,
-                    fontWeight: FontWeight.w600),
-              ),
-            );
-          }
-          cursor++;
-          final items = groups[key]!;
-          if (index < cursor + items.length) {
-            final scan = items[index - cursor];
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _HistoryItem(scan: scan),
-            );
-          }
-          cursor += items.length;
-        }
-        return const SizedBox.shrink();
-      },
+    final items = <Widget>[];
+
+    // "Last Scan" pinned highlight — first item
+    final latest = history.first;
+    items.add(_LastScanBanner(entry: latest));
+
+    for (final key in sortedKeys) {
+      items.add(_DateHeader(label: key));
+      for (final entry in groups[key]!) {
+        items.add(_HistoryCard(entry: entry));
+      }
+    }
+    items.add(const SizedBox(height: 16));
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      children: items,
     );
   }
 }
 
-class _HistoryItem extends StatelessWidget {
-  final ScanModel scan;
-  const _HistoryItem({required this.scan});
+// ─── Last Scan banner ─────────────────────────────────────────────────────────
 
-  String _timeLabel(DateTime dt) {
-    final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return '${diff.inDays}d ago';
-  }
-
-  Color _categoryColor(String? cat) {
-    switch (cat?.toLowerCase()) {
-      case 'medicinal':
-        return const Color(0xFF2A9D8F);
-      case 'edible':
-        return Colors.green.shade600;
-      case 'toxic':
-        return Colors.red.shade400;
-      default:
-        return AppColors.ga;
-    }
-  }
+class _LastScanBanner extends StatelessWidget {
+  final HistoryEntry entry;
+  const _LastScanBanner({required this.entry});
 
   @override
   Widget build(BuildContext context) {
+    final plant = entry.plant;
     return GestureDetector(
-      onTap: () {
-        // Navigate to plant detail — using dummy plant from scan
-        // In real app, fetch plant by scan.plantId first
-      },
+      onTap: () => context.push(AppRoutes.plantDetail, extra: plant),
       child: Container(
-        padding: const EdgeInsets.all(14),
+        margin: const EdgeInsets.only(bottom: 20),
+        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppColors.dark2, AppColors.ga],
+          ),
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 6,
-                offset: const Offset(0, 2))
+              color: AppColors.ga.withAlpha(60),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
           ],
         ),
-        child: Row(
+        child: Stack(
           children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: AppColors.ga.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Center(
-                child: Text(
-                  scan.emoji ?? '🌿',
-                  style: const TextStyle(fontSize: 24),
-                ),
+            Positioned(
+              top: -8, right: 0,
+              child: Opacity(
+                opacity: 0.15,
+                child: Text(plant.emoji ?? '🌿',
+                    style: const TextStyle(fontSize: 80)),
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    scan.commonName ?? 'Unknown Plant',
-                    style: AppTextStyles.label.copyWith(
-                        color: AppColors.darkText,
-                        fontWeight: FontWeight.w600),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${scan.scientificName ?? ''} · ${_timeLabel(scan.scannedAt)}',
-                    style: AppTextStyles.caption
-                        .copyWith(color: AppColors.mutedText),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
             Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '${(scan.confidence * 100).toStringAsFixed(0)}%',
-                  style: AppTextStyles.caption.copyWith(
-                      color: AppColors.ga, fontWeight: FontWeight.w700),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withAlpha(30),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.white.withAlpha(60)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.history_rounded,
+                              color: Colors.white70, size: 12),
+                          const SizedBox(width: 4),
+                          Text('Last Scan',
+                              style: AppTextStyles.caption.copyWith(
+                                  color: Colors.white70,
+                                  fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                    ),
+                    const Spacer(),
+                    _ConfBadge(confidence: plant.confidence),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                if (scan.category != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: _categoryColor(scan.category)
-                          .withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      scan.category!,
-                      style: AppTextStyles.caption.copyWith(
-                          color: _categoryColor(scan.category),
-                          fontSize: 10),
-                    ),
+                const SizedBox(height: 12),
+                Text(
+                  plant.commonName,
+                  style: AppTextStyles.heading1
+                      .copyWith(fontSize: 20, color: Colors.white),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  plant.scientificName,
+                  style: AppTextStyles.body.copyWith(
+                    color: Colors.white70,
+                    fontStyle: FontStyle.italic,
+                    fontSize: 13,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    const Icon(Icons.access_time_rounded,
+                        color: Colors.white54, size: 12),
+                    const SizedBox(width: 4),
+                    Text(
+                      _formatTime(entry.scannedAt),
+                      style: AppTextStyles.caption
+                          .copyWith(color: Colors.white54),
+                    ),
+                    const Spacer(),
+                    Text(
+                      'View details →',
+                      style: AppTextStyles.caption.copyWith(
+                          color: AppColors.gc,
+                          fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
               ],
             ),
           ],
@@ -337,109 +271,266 @@ class _HistoryItem extends StatelessWidget {
       ),
     );
   }
+
+  String _formatTime(DateTime dt) {
+    final now = DateTime.now();
+    final diff = now.difference(dt);
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${dt.day}/${dt.month}/${dt.year}';
+  }
 }
 
-class _EmptyState extends StatelessWidget {
+// ─── Date section header ──────────────────────────────────────────────────────
+
+class _DateHeader extends StatelessWidget {
+  final String label;
+  const _DateHeader({required this.label});
+
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text('🌱', style: TextStyle(fontSize: 64)),
-          const SizedBox(height: 16),
-          Text('No scans yet',
-              style: AppTextStyles.heading2
-                  .copyWith(color: AppColors.darkText)),
-          const SizedBox(height: 8),
-          Text(
-            'Go identify a plant to see it here!',
-            style: AppTextStyles.body.copyWith(color: AppColors.mutedText),
-            textAlign: TextAlign.center,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 4, 0, 8),
+      child: Text(
+        label,
+        style: AppTextStyles.label.copyWith(
+            color: AppColors.mutedText, fontWeight: FontWeight.w700),
+      ),
+    );
+  }
+}
+
+// ─── History card ─────────────────────────────────────────────────────────────
+
+class _HistoryCard extends ConsumerWidget {
+  final HistoryEntry entry;
+  const _HistoryCard({required this.entry});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final plant = entry.plant;
+
+    return Dismissible(
+      key: Key(plant.id + entry.scannedAt.toIso8601String()),
+      direction: DismissDirection.endToStart,
+      onDismissed: (_) {
+        ref.read(localHistoryProvider.notifier).remove(plant.id);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${plant.commonName} removed'),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
           ),
-        ],
+        );
+      },
+      background: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        decoration: BoxDecoration(
+          color: Colors.red.shade50,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.red.shade200),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.delete_outline_rounded,
+                color: Colors.red.shade400, size: 22),
+            const SizedBox(height: 2),
+            Text('Delete',
+                style: AppTextStyles.caption
+                    .copyWith(color: Colors.red.shade400)),
+          ],
+        ),
+      ),
+      child: GestureDetector(
+        onTap: () => context.push(AppRoutes.plantDetail, extra: plant),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: const [
+              BoxShadow(
+                  color: Color(0x07000000),
+                  blurRadius: 8,
+                  offset: Offset(0, 2))
+            ],
+          ),
+          child: Row(
+            children: [
+              // Emoji box
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: AppColors.g2,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: Text(
+                    plant.emoji ?? '🌿',
+                    style: const TextStyle(fontSize: 26),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Name + scientific name
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      plant.commonName,
+                      style: AppTextStyles.label.copyWith(
+                          color: AppColors.darkText,
+                          fontWeight: FontWeight.w600),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      plant.scientificName,
+                      style: AppTextStyles.caption.copyWith(
+                          color: AppColors.mutedText,
+                          fontStyle: FontStyle.italic),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _formatDate(entry.scannedAt),
+                      style: AppTextStyles.caption
+                          .copyWith(color: AppColors.mutedText, fontSize: 10),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Confidence + arrow
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  _ConfBadge(confidence: plant.confidence),
+                  const SizedBox(height: 6),
+                  const Icon(Icons.arrow_forward_ios_rounded,
+                      size: 12, color: AppColors.mutedText),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
-}
 
-class _ErrorState extends StatelessWidget {
-  final VoidCallback onRetry;
-  const _ErrorState({required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        const Text('🌵', style: TextStyle(fontSize: 48)),
-        const SizedBox(height: 16),
-        Text('Something went wrong',
-            style: AppTextStyles.label
-                .copyWith(color: AppColors.darkText)),
-        TextButton(
-          onPressed: onRetry,
-          child: Text('Retry',
-              style: AppTextStyles.body.copyWith(color: AppColors.gc)),
-        ),
-      ]),
-    );
+  String _formatDate(DateTime dt) {
+    final now = DateTime.now();
+    final diff = now.difference(dt);
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    return '${dt.day} ${_month(dt.month)} ${dt.year}';
   }
+
+  String _month(int m) => const [
+        '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      ][m];
 }
 
-class _HistoryShimmer extends StatelessWidget {
-  const _HistoryShimmer();
+// ─── Confidence badge ─────────────────────────────────────────────────────────
 
-  @override
-  Widget build(BuildContext context) {
-    return Shimmer.fromColors(
-      baseColor: const Color(0xFFE8E8E8),
-      highlightColor: const Color(0xFFF5F5F5),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(children: [
-            _SBox(width: 120, height: 28),
-            const SizedBox(height: 20),
-            _SBox(width: double.infinity, height: 46, radius: 14),
-            const SizedBox(height: 16),
-            Row(children: [
-              _SBox(width: 60, height: 32, radius: 16),
-              const SizedBox(width: 8),
-              _SBox(width: 80, height: 32, radius: 16),
-              const SizedBox(width: 8),
-              _SBox(width: 60, height: 32, radius: 16),
-            ]),
-            const SizedBox(height: 20),
-            ...List.generate(
-                4,
-                (_) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: _SBox(
-                          width: double.infinity, height: 72),
-                    )),
-          ]),
-        ),
-      ),
-    );
+class _ConfBadge extends StatelessWidget {
+  final double confidence;
+  const _ConfBadge({required this.confidence});
+
+  Color get _color {
+    if (confidence >= 0.85) return AppColors.ga;
+    if (confidence >= 0.60) return Colors.orange.shade600;
+    return Colors.red.shade400;
   }
-}
-
-class _SBox extends StatelessWidget {
-  final double? width;
-  final double height;
-  final double radius;
-  const _SBox({this.width, required this.height, this.radius = 12});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: width,
-      height: height,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(radius),
+        color: _color.withAlpha(25),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: _color.withAlpha(80)),
+      ),
+      child: Text(
+        '${(confidence * 100).toStringAsFixed(0)}%',
+        style: TextStyle(
+            color: _color, fontSize: 11, fontWeight: FontWeight.w700),
       ),
     );
   }
 }
 
+// ─── Empty state ──────────────────────────────────────────────────────────────
+
+class _EmptyState extends StatelessWidget {
+  final VoidCallback onScan;
+  const _EmptyState({required this.onScan});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                color: AppColors.g2,
+                shape: BoxShape.circle,
+              ),
+              child: const Center(
+                child: Text('🌱', style: TextStyle(fontSize: 56)),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text('No scans yet',
+                style: AppTextStyles.heading2
+                    .copyWith(color: AppColors.darkText)),
+            const SizedBox(height: 8),
+            Text(
+              'Scanned plants will appear here.\nTap below to identify your first plant!',
+              style:
+                  AppTextStyles.body.copyWith(color: AppColors.mutedText),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 28),
+            ElevatedButton.icon(
+              onPressed: onScan,
+              icon: const Icon(Icons.camera_alt_rounded,
+                  size: 18, color: Colors.white),
+              label: Text(
+                'Scan your first plant',
+                style: AppTextStyles.button.copyWith(color: Colors.white),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.gb,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 24, vertical: 14),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

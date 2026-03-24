@@ -1,11 +1,21 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'scan_stats_provider.dart';
+import 'local_history_provider.dart';
 
 // ─── Saved plant IDs ──────────────────────────────────────────────────────────
-/// TODO: Replace with real Supabase StreamProvider watching saved_plants table.
+/// Merges local + Supabase saved plant IDs.
 final savedPlantIdsProvider = FutureProvider<List<String>>((ref) async {
-  final repo = ref.read(savedPlantsRepoProvider);
-  return repo.getSavedPlantIds();
+  // Watch local saved so the provider updates when local state changes
+  final localSaved = ref.watch(localSavedPlantsProvider);
+  final localIds = localSaved.map((p) => p.id).toList();
+
+  List<String> remoteIds = [];
+  try {
+    final repo = ref.read(savedPlantsRepoProvider);
+    remoteIds = await repo.getSavedPlantIds();
+  } catch (_) {}
+
+  return {...localIds, ...remoteIds}.toList();
 });
 
 // ─── Save / unsave action ─────────────────────────────────────────────────────

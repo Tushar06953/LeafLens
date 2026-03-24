@@ -7,6 +7,7 @@ import '../../../core/theme/text_styles.dart';
 import '../../../core/router/app_router.dart';
 import '../../../data/models/plant.dart';
 import '../../../providers/plant_of_day_provider.dart';
+import '../../../providers/local_history_provider.dart';
 import '../../widgets/bottom_nav.dart';
 
 // ─── Local state ──────────────────────────────────────────────────────────────
@@ -25,25 +26,41 @@ class EncyclopediaScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final plantsAsync = ref.watch(allPlantsProvider);
     final potdAsync = ref.watch(plantOfDayProvider);
+    final savedPlants = ref.watch(localSavedPlantsProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.warm,
-      body: plantsAsync.when(
-        loading: () => const _EncShimmer(),
-        error: (e, _) =>
-            _ErrorState(onRetry: () => ref.invalidate(allPlantsProvider)),
-        data: (plants) => _EncBody(plants: plants, potdAsync: potdAsync),
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (!didPop) context.go(AppRoutes.home);
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.warm,
+        body: plantsAsync.when(
+          loading: () => const _EncShimmer(),
+          error: (e, _) =>
+              _ErrorState(onRetry: () => ref.invalidate(allPlantsProvider)),
+          data: (plants) => _EncBody(
+            plants: plants,
+            savedPlants: savedPlants,
+            potdAsync: potdAsync,
+          ),
+        ),
+        bottomNavigationBar: const BottomNav(currentIndex: 3),
       ),
-      bottomNavigationBar: const BottomNav(currentIndex: 2),
     );
   }
 }
 
 class _EncBody extends ConsumerWidget {
   final List<PlantModel> plants;
+  final List<PlantModel> savedPlants;
   final AsyncValue<PlantModel?> potdAsync;
 
-  const _EncBody({required this.plants, required this.potdAsync});
+  const _EncBody({
+    required this.plants,
+    required this.savedPlants,
+    required this.potdAsync,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -171,6 +188,87 @@ class _EncBody extends ConsumerWidget {
             ),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 20)),
+
+          // ── Saved by You section ──────────────────────────────────
+          if (savedPlants.isNotEmpty) ...[
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 30,
+                      height: 30,
+                      decoration: BoxDecoration(
+                        color: AppColors.gold.withAlpha(25),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.bookmark_rounded,
+                          color: AppColors.gold, size: 16),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Saved by You',
+                      style: AppTextStyles.heading3.copyWith(fontSize: 16),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.gold.withAlpha(25),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '${savedPlants.length}',
+                        style: AppTextStyles.caption.copyWith(
+                            color: AppColors.gold,
+                            fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              sliver: SliverGrid(
+                gridDelegate:
+                    const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 0.85,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (ctx, i) => _PlantCard(plant: savedPlants[i], index: i),
+                  childCount: savedPlants.length,
+                ),
+              ),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 24)),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    const Expanded(child: Divider()),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text(
+                        'All Plants',
+                        style: AppTextStyles.caption.copyWith(
+                            color: AppColors.mutedText,
+                            fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    const Expanded(child: Divider()),
+                  ],
+                ),
+              ),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 8)),
+          ],
 
           // Grid count header
           SliverToBoxAdapter(

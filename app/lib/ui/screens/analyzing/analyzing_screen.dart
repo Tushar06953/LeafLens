@@ -7,6 +7,7 @@ import '../../../core/theme/text_styles.dart';
 import '../../../core/router/app_router.dart';
 import '../../../data/services/identify_service.dart';
 import '../../../providers/plant_of_day_provider.dart';
+import '../../../providers/local_history_provider.dart';
 
 // Step status
 enum _StepStatus { waiting, inProgress, done }
@@ -87,6 +88,8 @@ class _AnalyzingScreenState extends ConsumerState<AnalyzingScreen>
       await Future.delayed(const Duration(milliseconds: 300));
 
       if (mounted) {
+        // Save to local history and refresh encyclopedia
+        ref.read(localHistoryProvider.notifier).add(plant);
         ref.invalidate(allPlantsProvider);
         context.go(AppRoutes.result, extra: plant);
       }
