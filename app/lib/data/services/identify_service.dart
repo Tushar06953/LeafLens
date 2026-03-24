@@ -8,10 +8,17 @@ import '../models/plant.dart';
 class IdentifyService {
   static final _dio = Dio(
     BaseOptions(
-      connectTimeout: const Duration(seconds: 30),
+      connectTimeout: const Duration(seconds: 60),
       receiveTimeout: const Duration(seconds: 120),
     ),
   );
+
+  /// Pings the backend health endpoint to wake up the Render free-tier instance.
+  static Future<void> warmUp() async {
+    try {
+      await _dio.get(ApiConstants.backendBaseUrl);
+    } catch (_) {}
+  }
 
   /// Sends images to the LeafLens FastAPI backend and returns a [PlantModel].
   /// Throws [IdentifyException] on low confidence or server errors.

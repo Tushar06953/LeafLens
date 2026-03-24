@@ -70,6 +70,9 @@ class _AnalyzingScreenState extends ConsumerState<AnalyzingScreen>
   }
 
   Future<void> _runIdentification() async {
+    // Wake up the Render free-tier backend before the heavy identify call
+    await IdentifyService.warmUp();
+
     await Future.delayed(const Duration(milliseconds: 600));
     _setStep(0, _StepStatus.done);
     _setStep(1, _StepStatus.inProgress);
