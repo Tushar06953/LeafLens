@@ -45,17 +45,13 @@ def identify_plant(
         plantnet_organ = ORGAN_MAP.get(organ, "auto")
         plantnet_url = "https://my-api.plantnet.org/v2/identify/all"
 
-        image_bytes_list = []
-        for f in files:
-            content = f.file.read()
-            image_bytes_list.append((f.filename or "image.jpg", content, f.content_type or "image/jpeg"))
+        pn_files = [
+            ("images", (f.filename or "image.jpg", f.file.read(), f.content_type or "image/jpeg"))
+            for f in files
+        ]
 
         with httpx.Client(timeout=60) as client:
-            pn_files = [
-                ("images", (name, data, ctype))
-                for name, data, ctype in image_bytes_list
-            ]
-            pn_form = [("organs", plantnet_organ)] * len(files)
+            pn_form = [("organs", plantnet_organ)] * len(pn_files)
 
             pn_resp = client.post(
                 plantnet_url,
@@ -121,9 +117,9 @@ def identify_plant(
         # ── 4. Upload image to Supabase Storage ───────────────────────────────
         image_url = None
         supabase = get_supabase()
-        if image_bytes_list:
+        if pn_files:
             img_name = f"{uuid.uuid4()}.jpg"
-            first_img_bytes = image_bytes_list[0][1]
+            first_img_bytes = pn_files[0][1][1]
             try:
                 supabase.storage.from_("plant-images").upload(
                     img_name, first_img_bytes, {"content-type": "image/jpeg"}
